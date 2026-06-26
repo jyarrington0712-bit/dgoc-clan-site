@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clan Power Ranking</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg:#0f1220; --panel:#171b2e; --panel2:#1f2540; --line:#2c3358;
@@ -165,6 +166,8 @@
   <div class="nav">
     <button class="navbtn active" data-view="ranking">⚔️ Power Ranking</button>
     <button class="navbtn" data-view="tournament">🏆 Tournament</button>
+    <button class="navbtn" id="syncNow" title="Pull the latest from the cloud">↻ Sync</button>
+    <span id="syncBadge" style="margin-left:auto;align-self:center;font-size:12px;color:var(--muted)"></span>
   </div>
 
   <div id="rankingView">
@@ -271,27 +274,95 @@ const ELIG = {
     ["Attack","#ef4444"],["Defense","#3b82f6"],["HP","#22c55e"],["Support","#f5c518"] ] }
 };
 
-let state = load();
-if(!state.eligibility) state.eligibility={type:"open",values:[]};
-if(!state.titles) state.titles={};
-if(!state.signups) state.signups=[];
-// migrate: single state.tournament -> state.tournaments[]
-if(!state.tournaments){
-  state.tournaments=[];
-  if(state.tournament){
-    state.tournaments.push({
-      id:uid(), name:"Tournament 1",
-      dates:{signup:"",start:""},
-      elig: state.tournament.elig || {type:"open",values:[]},
-      signups: (state.signups||[]).slice(),
-      size: state.tournament.size||0,
-      slots: state.tournament.slots||null,
-      picks: state.tournament.picks||{},
-      votes: state.tournament.votes||{},
-      championName:null
-    });
+// ---- normalize: apply defaults + migrate old shapes (used for both local and cloud data) ----
+function normalize(s){
+  if(!s) return seed();
+  if(!s.eligibility) s.eligibility={type:"open",values:[]};
+  if(!s.titles) s.titles={};
+  if(!s.signups) s.signups=[];
+  if(!s.tournaments){
+    s.tournaments=[];
+    if(s.tournament){
+      s.tournaments.push({
+        id:uid(), name:"Tournament 1",
+        dates:{signup:"",start:""},
+        elig: s.tournament.elig || {type:"open",values:[]},
+        signups: (s.signups||[]).slice(),
+        size: s.tournament.size||0,
+        slots: s.tournament.slots||null,
+        picks: s.tournament.picks||{},
+        votes: s.tournament.votes||{},
+        championName:null
+      });
+    }
+    delete s.tournament;
   }
-  delete state.tournament;
+  return s;
+}
+
+let state = normalize(load());
+
+// ---- Cloud sync (Supabase) ----
+const SB_URL  = "https://ebuoretesjucvsfmzdqd.supabase.co";
+const SB_KEY  = "sb_publishable_oZORfaKidrECkheenWYaGw_W1PkS_fL";
+const SB_SLUG = "main";
+let sb=null;
+try{ if(window.supabase) sb=window.supabase.createClient(SB_URL, SB_KEY); }catch(e){ console.warn("Supabase init failed",e); }
+
+let cloudReady=false, cloudRowId=null, pushTimer=null;
+
+function setSyncStatus(s){
+  const el=document.getElementById("syncBadge"); if(!el) return;
+  const map={
+    syncing:["⟳ syncing…","var(--muted)"], synced:["☁ synced","var(--accent2)"],
+    saving:["⟳ saving…","var(--muted)"], saved:["☁ saved","var(--accent2)"],
+    offline:["⚠ offline — local only","var(--A)"], local:["⚠ local only","var(--A)"]
+  };
+  const v=map[s]||[s,"var(--muted)"]; el.textContent=v[0]; el.style.color=v[1];
+}
+
+async function cloudPull(){
+  if(!sb){ setSyncStatus("local"); return; }
+  setSyncStatus("syncing");
+  try{
+    const { data:rows, error } = await sb.from("clan_state").select("id,data").eq("slug",SB_SLUG).order("id").limit(1);
+    if(error) throw error;
+    if(rows && rows.length){
+      cloudRowId=rows[0].id;
+      const d=rows[0].data;
+      if(d && d.tiers){
+        state=normalize(d);
+        try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+        render();
+        if(document.getElementById("tournamentView").style.display!=="none") renderTournaments();
+      }
+    } else {
+      const { data:ins, error:e2 } = await sb.from("clan_state").insert({ slug:SB_SLUG, data:state }).select("id");
+      if(e2) throw e2;
+      if(ins && ins.length) cloudRowId=ins[0].id;
+    }
+    cloudReady=true;
+    setSyncStatus("synced");
+  }catch(e){ console.warn("cloud pull failed",e); setSyncStatus("offline"); }
+}
+
+function cloudPush(){
+  if(!sb || !cloudReady) return;
+  clearTimeout(pushTimer);
+  setSyncStatus("saving");
+  pushTimer=setTimeout(async ()=>{
+    try{
+      let error;
+      if(cloudRowId!=null){
+        ({ error } = await sb.from("clan_state").update({ data:state }).eq("id",cloudRowId));
+      } else {
+        const { data:ins, error:e2 } = await sb.from("clan_state").insert({ slug:SB_SLUG, data:state }).select("id");
+        error=e2; if(ins && ins.length) cloudRowId=ins[0].id;
+      }
+      if(error) throw error;
+      setSyncStatus("saved");
+    }catch(e){ console.warn("cloud push failed",e); setSyncStatus("error"); }
+  }, 700);
 }
 
 function seed(){
@@ -309,7 +380,7 @@ function load(){
   try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s&&s.tiers) return s; }catch(e){}
   return seed();
 }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ alert("Browser storage is full — likely too many team images. Remove a few and try again."); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ alert("Browser storage is full — likely too many team images. Remove a few and try again."); } cloudPush(); }
 
 function parsePower(s){
   if(typeof s==="number") return s;
@@ -1170,7 +1241,10 @@ window.addEventListener("resize",()=>{
   if(open) drawConnectors(open);
 });
 
+document.getElementById("syncNow").onclick=()=>cloudPull();
+
 rebalance(); save(); render();
+cloudPull();
 </script>
 </body>
 </html>
