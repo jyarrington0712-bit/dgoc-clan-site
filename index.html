@@ -160,17 +160,66 @@
   .lockmsg{color:var(--A);font-size:12px;font-style:italic;margin:2px 0 10px}
   .tsec{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:18px 0 8px}
   .tsec:first-child{margin-top:4px}
+  /* ---- logins / roles ---- */
+  .userbar{display:flex;align-items:center;gap:10px;margin:-6px 0 16px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .userbar .who{font-weight:600;color:var(--txt)}
+  .userbar button{padding:6px 12px;font-size:13px}
+  .rbadge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 9px;border-radius:20px}
+  .rbadge.admin{background:rgba(244,63,94,.16);color:#f43f5e;border:1px solid rgba(244,63,94,.45)}
+  .rbadge.leader{background:rgba(245,197,24,.14);color:#f5c518;border:1px solid rgba(245,197,24,.45)}
+  .rbadge.officer{background:rgba(168,85,247,.16);color:#a855f7;border:1px solid rgba(168,85,247,.45)}
+  .rbadge.member{background:rgba(154,163,199,.12);color:var(--muted);border:1px solid var(--line)}
+  .mtable{width:100%;border-collapse:collapse;margin-top:6px}
+  .mtable th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .mtable td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .mtable tr:hover td{background:var(--panel2)}
+  .mtable select{padding:5px 8px;font-size:13px}
+  .mtable .mn{font-weight:600}
+  .mtable .you{font-size:11px;color:var(--accent2);margin-left:6px;font-weight:700}
+  .mtable .actbtn{padding:4px 10px;font-size:12px}
+  .mtable .unclaimed{font-size:11px;color:var(--A);font-style:italic}
+  .votenote.youvoted{color:var(--accent2);font-style:normal;font-weight:600}
+  /* ---- home: MOTD + bulletin ---- */
+  .motd{position:relative;margin-bottom:18px;padding:16px 18px;border-radius:12px;background:linear-gradient(90deg,rgba(245,197,24,.14),rgba(245,197,24,.03));border:1px solid rgba(245,197,24,.4);border-left:4px solid #f5c518}
+  .motd .ml{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#f5c518;margin-bottom:6px}
+  .motd .mt{font-size:16px;font-weight:600;color:var(--txt);white-space:pre-wrap;word-break:break-word}
+  .motd .mt.empty{color:var(--muted);font-style:italic;font-weight:400}
+  .motd .medit{position:absolute;top:12px;right:12px}
+  .motd .medit button{padding:4px 11px;font-size:12px}
+  .bulletin{padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .bulletin .bhead{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .bulletin .bhead h3{margin:0;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .bpost-form{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+  .bpost-form textarea{height:70px}
+  .bpost-form .row{margin-top:0}
+  .bitem{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;background:var(--panel2)}
+  .bitem .btext{white-space:pre-wrap;word-break:break-word;font-size:14px;margin-bottom:7px}
+  .bitem .bmeta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .bitem .bmeta .ba{font-weight:700;color:var(--accent)}
+  .bitem .bmeta .bdel{margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px}
+  .bitem .bmeta .bdel:hover{color:var(--S)}
+  .bempty{color:var(--muted);font-style:italic;font-size:13px;padding:6px 2px}
 </style>
 </head>
 <body>
   <div class="nav">
-    <button class="navbtn active" data-view="ranking">⚔️ Power Ranking</button>
+    <button class="navbtn active" data-view="home">🏠 Home</button>
+    <button class="navbtn" data-view="ranking">⚔️ Power Ranking</button>
     <button class="navbtn" data-view="tournament">🏆 Tournament</button>
+    <button class="navbtn" data-view="members" data-req="leader">👥 Members</button>
     <button class="navbtn" id="syncNow" title="Pull the latest from the cloud">↻ Sync</button>
     <span id="syncBadge" style="margin-left:auto;align-self:center;font-size:12px;color:var(--muted)"></span>
   </div>
+  <div class="userbar" id="userbar"></div>
 
-  <div id="rankingView">
+  <div id="homeView">
+    <h1>🏠 DGoC Clan Home</h1>
+    <div class="sub">Message of the day and clan bulletin. The Clan Leader sets the message of the day; Officers post to the bulletin.</div>
+    <div id="motdWrap"></div>
+    <div id="bulletinWrap"></div>
+  </div>
+
+  <div id="rankingView" style="display:none">
   <h1>⚔️ Clan Power Ranking</h1>
   <div class="sub">Drag accounts between tiers and reorder within a tier. Rank #1–#30 flows top to bottom. Everything saves automatically in this browser.</div>
 
@@ -180,7 +229,7 @@
     <span style="color:#6b7299">Click the ⚐ on any card to set a border</span>
   </div>
 
-  <div class="toolbar">
+  <div class="toolbar" data-req="officer">
     <input type="text" id="mName" placeholder="Account name">
     <input type="number" id="mPow" placeholder="Power">
     <button class="primary" id="addBtn">+ Add</button>
@@ -200,11 +249,31 @@
   <div id="tournamentView" style="display:none">
     <h1>🏆 Clan Tournaments</h1>
     <div class="sub">Your recent, current, and upcoming tournaments. Each has its own check-in roster, eligibility rules, and dates. Click one to open its bracket. Seeds come from Power Ranking order.</div>
-    <div class="toolbar">
+    <div class="toolbar" data-req="officer">
       <button class="primary" id="newTourBtn">＋ New tournament</button>
     </div>
     <div id="tourList"></div>
   </div>
+
+  <div id="membersView" style="display:none">
+    <h1>👥 Clan Members &amp; Roles</h1>
+    <div class="sub">Who can do what. People sign in and claim their name, then a Clan Leader or Admin sets their role. New sign-ins start as Members.</div>
+    <div id="memberList"></div>
+  </div>
+
+  <dialog id="authDlg">
+    <h1 style="font-size:16px;margin-bottom:6px" id="authTitle">Sign in</h1>
+    <div class="hint" id="authHint">Enter your clan name and PIN. First time? Just pick a PIN — it claims your name.</div>
+    <label class="fld">Name</label>
+    <input type="text" id="authName" placeholder="Your clan name" style="width:100%">
+    <label class="fld">PIN</label>
+    <input type="text" id="authPin" placeholder="4+ digits" inputmode="numeric" style="width:100%">
+    <div class="hint" id="authMsg" style="color:var(--S);min-height:14px"></div>
+    <div class="row">
+      <button class="ghost" id="authCancel">Cancel</button>
+      <button class="primary" id="authGo">Continue</button>
+    </div>
+  </dialog>
 
   <dialog id="tourDlg">
     <h1 style="font-size:16px;margin-bottom:2px" id="tourDlgTitle">New tournament</h1>
@@ -280,6 +349,10 @@ function normalize(s){
   if(!s.eligibility) s.eligibility={type:"open",values:[]};
   if(!s.titles) s.titles={};
   if(!s.signups) s.signups=[];
+  if(!s.users) s.users={};
+  if(!Object.values(s.users).some(u=>u.role==="admin")) s.users["[DGoC]Luffy"]={pin:null,role:"admin"};
+  if(typeof s.motd!=="string") s.motd="";
+  if(!Array.isArray(s.bulletin)) s.bulletin=[];
   if(!s.tournaments){
     s.tournaments=[];
     if(s.tournament){
@@ -301,6 +374,239 @@ function normalize(s){
 }
 
 let state = normalize(load());
+
+// ---- Logins & roles ----
+const ROLE_RANK={member:0,officer:1,leader:2,admin:3};
+const ROLE_LABEL={admin:"Admin",leader:"Clan Leader",officer:"Officer",member:"Member"};
+let currentUser=null;
+try{ currentUser=sessionStorage.getItem("clanUser")||null; }catch(e){}
+function me(){ return (currentUser && state.users && state.users[currentUser]) ? state.users[currentUser] : null; }
+function myRole(){ const u=me(); return u?u.role:null; }
+function atLeast(r){ const u=me(); return !!u && (ROLE_RANK[u.role]??-1) >= (ROLE_RANK[r]??99); }
+
+function signIn(name){
+  currentUser=name;
+  try{ sessionStorage.setItem("clanUser",name); }catch(e){}
+  refreshAll();
+}
+function signOut(){
+  currentUser=null;
+  try{ sessionStorage.removeItem("clanUser"); }catch(e){}
+  if(!atLeast("leader") && document.getElementById("membersView").style.display!=="none") switchView("ranking");
+  refreshAll();
+}
+function refreshAll(){
+  applyPermissions();
+  render();
+  if(document.getElementById("homeView").style.display!=="none") renderHome();
+  if(document.getElementById("tournamentView").style.display!=="none") renderTournaments();
+  if(document.getElementById("membersView").style.display!=="none") renderMembers();
+}
+
+const authDlg=()=>document.getElementById("authDlg");
+function openAuth(){
+  document.getElementById("authName").value="";
+  document.getElementById("authPin").value="";
+  document.getElementById("authMsg").textContent="";
+  authDlg().showModal();
+  document.getElementById("authName").focus();
+}
+function doAuth(){
+  const name=document.getElementById("authName").value.trim();
+  const pin=document.getElementById("authPin").value.trim();
+  const msg=document.getElementById("authMsg");
+  if(!name){ msg.textContent="Enter your name."; return; }
+  const u=state.users[name];
+  if(u){
+    if(u.pin==null){            // reserved-but-unclaimed (e.g. founding admin)
+      if(pin.length<4){ msg.textContent="Pick a PIN of at least 4 digits to claim this name."; return; }
+      u.pin=pin; save(); authDlg().close(); signIn(name); return;
+    }
+    if(u.pin===pin){ authDlg().close(); signIn(name); return; }
+    msg.textContent="Wrong PIN for that name."; return;
+  }
+  // brand-new sign-in → claims name as a Member
+  if(pin.length<4){ msg.textContent="Pick a PIN of at least 4 digits."; return; }
+  state.users[name]={pin,role:"member"};
+  save(); authDlg().close(); signIn(name);
+}
+
+function applyPermissions(){
+  document.querySelectorAll("[data-req]").forEach(el=>{
+    el.style.display = atLeast(el.dataset.req) ? "" : "none";
+  });
+  renderUserbar();
+}
+function renderUserbar(){
+  const bar=document.getElementById("userbar"); if(!bar) return;
+  bar.innerHTML="";
+  const u=me();
+  if(u){
+    const who=document.createElement("span"); who.className="who"; who.textContent=currentUser;
+    const badge=document.createElement("span"); badge.className="rbadge "+u.role; badge.textContent=ROLE_LABEL[u.role]||u.role;
+    const out=document.createElement("button"); out.textContent="Sign out"; out.onclick=signOut;
+    bar.appendChild(document.createTextNode("Signed in as "));
+    bar.appendChild(who); bar.appendChild(badge); bar.appendChild(out);
+  } else {
+    const note=document.createElement("span"); note.textContent="Viewing read-only. ";
+    const inb=document.createElement("button"); inb.className="primary"; inb.textContent="Sign in"; inb.onclick=openAuth;
+    bar.appendChild(note); bar.appendChild(inb);
+  }
+}
+
+// ---- Members admin panel ----
+function renderMembers(){
+  const wrap=document.getElementById("memberList"); if(!wrap) return;
+  wrap.innerHTML="";
+  const canAssign=atLeast("leader"), canAdmin=atLeast("admin");
+  const names=Object.keys(state.users).sort((a,b)=>(ROLE_RANK[state.users[b].role]-ROLE_RANK[state.users[a].role])||a.localeCompare(b));
+  const adminCount=names.filter(n=>state.users[n].role==="admin").length;
+  const table=document.createElement("table"); table.className="mtable";
+  table.innerHTML="<thead><tr><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead>";
+  const tb=document.createElement("tbody");
+  names.forEach(n=>{
+    const u=state.users[n];
+    const tr=document.createElement("tr");
+    const tdN=document.createElement("td"); tdN.className="mn"; tdN.textContent=n;
+    if(n===currentUser){ const y=document.createElement("span"); y.className="you"; y.textContent="you"; tdN.appendChild(y); }
+    const tdR=document.createElement("td");
+    const lockTarget = (u.role==="admin" && !canAdmin);     // only admins manage admins
+    if(canAssign && !lockTarget){
+      const sel=document.createElement("select");
+      ["member","officer","leader"].concat(canAdmin?["admin"]:[]).forEach(r=>{
+        const o=document.createElement("option"); o.value=r; o.textContent=ROLE_LABEL[r]; if(u.role===r)o.selected=true; sel.appendChild(o);
+      });
+      sel.onchange=()=>changeRole(n,sel.value);
+      tdR.appendChild(sel);
+    } else {
+      const b=document.createElement("span"); b.className="rbadge "+u.role; b.textContent=ROLE_LABEL[u.role]; tdR.appendChild(b);
+    }
+    const tdS=document.createElement("td");
+    if(u.pin==null){ const s2=document.createElement("span"); s2.className="unclaimed"; s2.textContent="not claimed yet"; tdS.appendChild(s2); }
+    else tdS.textContent="claimed";
+    const tdA=document.createElement("td"); tdA.style.textAlign="right";
+    if(canAssign && !lockTarget){
+      if(u.pin!=null){
+        const rp=document.createElement("button"); rp.className="actbtn"; rp.textContent="Reset PIN";
+        rp.onclick=()=>resetPin(n); tdA.appendChild(rp);
+      }
+      const isLastAdmin = u.role==="admin" && adminCount<=1;
+      if(!isLastAdmin){
+        const rm=document.createElement("button"); rm.className="actbtn ghost"; rm.style.marginLeft="6px"; rm.textContent="Remove";
+        rm.onclick=()=>removeUser(n); tdA.appendChild(rm);
+      }
+    }
+    tr.appendChild(tdN); tr.appendChild(tdR); tr.appendChild(tdS); tr.appendChild(tdA);
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb); wrap.appendChild(table);
+}
+function changeRole(name,role){
+  if(!atLeast("leader")) return;
+  const u=state.users[name]; if(!u) return;
+  if((u.role==="admin"||role==="admin") && !atLeast("admin")){ alert("Only an Admin can grant or remove Admin."); renderMembers(); return; }
+  if(u.role==="admin" && role!=="admin"){
+    const admins=Object.values(state.users).filter(x=>x.role==="admin").length;
+    if(admins<=1){ alert("Can't demote the last Admin."); renderMembers(); return; }
+  }
+  u.role=role; save();
+  if(name===currentUser) refreshAll(); else renderMembers();
+}
+function resetPin(name){
+  if(!atLeast("leader")) return;
+  const u=state.users[name]; if(!u) return;
+  if(u.role==="admin" && !atLeast("admin")){ alert("Only an Admin can reset an Admin's PIN."); return; }
+  if(!confirm("Reset "+name+"'s PIN? They'll set a new one next time they sign in.")) return;
+  u.pin=null; if(name===currentUser) signOut(); else { save(); renderMembers(); }
+}
+function removeUser(name){
+  if(!atLeast("leader")) return;
+  const u=state.users[name]; if(!u) return;
+  if(u.role==="admin" && !atLeast("admin")){ alert("Only an Admin can remove an Admin."); return; }
+  if(u.role==="admin" && Object.values(state.users).filter(x=>x.role==="admin").length<=1){ alert("Can't remove the last Admin."); return; }
+  if(!confirm("Remove "+name+"'s login? Their role is wiped; they can re-claim later as a Member.")) return;
+  delete state.users[name];
+  if(name===currentUser) signOut(); else { save(); renderMembers(); }
+}
+
+// ---- Home: Message of the Day + Bulletin ----
+function renderHome(){ renderMotd(); renderBulletin(); }
+function renderMotd(){
+  const wrap=document.getElementById("motdWrap"); if(!wrap) return;
+  wrap.innerHTML="";
+  const box=document.createElement("div"); box.className="motd";
+  const lbl=document.createElement("div"); lbl.className="ml"; lbl.textContent="📣 Message of the Day";
+  const txt=document.createElement("div"); txt.className="mt"+(state.motd?"":" empty");
+  txt.textContent=state.motd || "No message set.";
+  box.appendChild(lbl); box.appendChild(txt);
+  if(atLeast("leader")){
+    const ed=document.createElement("div"); ed.className="medit";
+    const b=document.createElement("button"); b.textContent=state.motd?"Edit":"Set";
+    b.onclick=editMotd; ed.appendChild(b); box.appendChild(ed);
+  }
+  wrap.appendChild(box);
+}
+function editMotd(){
+  if(!atLeast("leader")) return;
+  const v=prompt("Message of the day (leave blank to clear):", state.motd||"");
+  if(v===null) return;
+  state.motd=v.trim(); save(); renderMotd();
+}
+function renderBulletin(){
+  const wrap=document.getElementById("bulletinWrap"); if(!wrap) return;
+  wrap.innerHTML="";
+  const box=document.createElement("div"); box.className="bulletin";
+  const head=document.createElement("div"); head.className="bhead";
+  const h=document.createElement("h3"); h.textContent="📌 Bulletin Board";
+  head.appendChild(h); box.appendChild(head);
+  if(atLeast("officer")){
+    const form=document.createElement("div"); form.className="bpost-form";
+    const ta=document.createElement("textarea"); ta.placeholder="Post an announcement to the clan…";
+    const row=document.createElement("div"); row.className="row";
+    const btn=document.createElement("button"); btn.className="primary"; btn.textContent="Post";
+    btn.onclick=()=>{ const v=ta.value.trim(); if(!v) return; postBulletin(v); };
+    row.appendChild(btn); form.appendChild(ta); form.appendChild(row); box.appendChild(form);
+  }
+  const posts=(state.bulletin||[]).slice().sort((a,b)=>b.ts-a.ts);
+  if(!posts.length){
+    const e=document.createElement("div"); e.className="bempty"; e.textContent="No announcements yet.";
+    box.appendChild(e);
+  } else {
+    posts.forEach(pst=>{
+      const it=document.createElement("div"); it.className="bitem";
+      const tx=document.createElement("div"); tx.className="btext"; tx.textContent=pst.text;
+      const meta=document.createElement("div"); meta.className="bmeta";
+      const a=document.createElement("span"); a.className="ba"; a.textContent=pst.author||"—";
+      const d=document.createElement("span"); d.textContent="· "+fmtDateTime(pst.ts);
+      meta.appendChild(a); meta.appendChild(d);
+      if(atLeast("officer")){
+        const del=document.createElement("button"); del.className="bdel"; del.textContent="🗑"; del.title="delete post";
+        del.onclick=()=>deleteBulletin(pst.id); meta.appendChild(del);
+      }
+      it.appendChild(tx); it.appendChild(meta); box.appendChild(it);
+    });
+  }
+  wrap.appendChild(box);
+}
+function postBulletin(text){
+  if(!atLeast("officer")) return;
+  state.bulletin=state.bulletin||[];
+  state.bulletin.push({id:uid(), text, author:currentUser, ts:Date.now()});
+  save(); renderBulletin();
+}
+function deleteBulletin(id){
+  if(!atLeast("officer")) return;
+  if(!confirm("Delete this post?")) return;
+  state.bulletin=(state.bulletin||[]).filter(x=>x.id!==id);
+  save(); renderBulletin();
+}
+function fmtDateTime(ts){
+  if(!ts) return "";
+  const d=new Date(ts);
+  return (d.getMonth()+1)+"/"+d.getDate()+"/"+(""+d.getFullYear()).slice(2)+" "+
+         d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+}
+
 
 // ---- Cloud sync (Supabase) ----
 const SB_URL  = "https://ebuoretesjucvsfmzdqd.supabase.co";
@@ -334,6 +640,7 @@ async function cloudPull(){
         state=normalize(d);
         try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
         render();
+        if(document.getElementById("homeView") && document.getElementById("homeView").style.display!=="none") renderHome();
         if(document.getElementById("tournamentView").style.display!=="none") renderTournaments();
       }
     } else {
@@ -411,6 +718,7 @@ function rebalance(){
 }
 
 function addMember(name,pow){
+  if(!atLeast("officer")) return;
   if(!name) return;
   state.tiers["D"].push({id:uid(),name,pow:parsePower(pow)});
   rebalance(); save(); render();
@@ -429,7 +737,8 @@ function render(){
     lbl.style.background=COLORS[t];
     const li=document.createElement("input");
     li.value=state.labels[t]; li.maxLength=6;
-    li.onchange=()=>{state.labels[t]=li.value;save();};
+    if(atLeast("officer")) li.onchange=()=>{state.labels[t]=li.value;save();};
+    else li.readOnly=true;
     lbl.appendChild(li);
     tier.appendChild(lbl);
 
@@ -447,6 +756,7 @@ function render(){
     board.appendChild(tier);
   });
   document.getElementById("count").textContent = allMembers().length+" accounts";
+  applyPermissions();
 }
 
 function card(m,rank,mx,tier){
@@ -462,8 +772,11 @@ function card(m,rank,mx,tier){
     <button class="flag${m.mark?" on":""}" title="flag / border">${m.mark?"⚑":"⚐"}</button>
     <button class="del" title="remove">✕</button>`;
   c.querySelector(".name").textContent=m.name;
-  c.querySelector(".name").title="click to rename";
-  c.querySelector(".name").onclick=()=>renameMember(m.id);
+  const canEdit=atLeast("officer");
+  if(canEdit){
+    c.querySelector(".name").title="click to rename";
+    c.querySelector(".name").onclick=()=>renameMember(m.id);
+  }
   const tw=c.querySelector(".trophies"), tn=titlesOf(m.id).length;
   if(tn){
     const b=document.createElement("span"); b.className="trophy";
@@ -476,19 +789,23 @@ function card(m,rank,mx,tier){
     if(e.target.closest("button,input,.name,.powval,.thumb")) return;
     toggleBanner(m.id);
   };
-  c.querySelector(".powval").onclick=()=>editPower(m.id);
-  c.querySelector(".flag").onclick=()=>cycleMark(m.id);
-  c.querySelector(".del").onclick=()=>{ removeMember(m.id); };
-  c.querySelector(".addteam").onclick=()=>addTeam(m.id);
+  if(canEdit){
+    c.querySelector(".powval").onclick=()=>editPower(m.id);
+    c.querySelector(".flag").onclick=()=>cycleMark(m.id);
+    c.querySelector(".del").onclick=()=>{ removeMember(m.id); };
+    c.querySelector(".addteam").onclick=()=>addTeam(m.id);
+  } else {
+    ["addteam","flag","del"].forEach(cl=>{ const b=c.querySelector("."+cl); if(b) b.style.display="none"; });
+  }
   const teams=m.teams||[], tc=c.querySelector(".teams");
   teams.forEach((t,i)=>{
     const th=document.createElement("img");
     th.className="thumb"; th.src=t.img;
-    th.title=`Team ${i+1} • ${fmtPower(t.power)} (click to remove)`;
-    th.onclick=()=>{ if(confirm("Remove this team image?")){ m.teams.splice(i,1); save(); render(); } };
+    th.title=canEdit?`Team ${i+1} • ${fmtPower(t.power)} (click to remove)`:`Team ${i+1} • ${fmtPower(t.power)}`;
+    if(canEdit) th.onclick=()=>{ if(confirm("Remove this team image?")){ m.teams.splice(i,1); save(); render(); } };
     tc.appendChild(th);
   });
-  c.addEventListener("pointerdown",e=>startDrag(e,c));
+  if(canEdit) c.addEventListener("pointerdown",e=>startDrag(e,c));
   return c;
 }
 
@@ -608,11 +925,15 @@ function tourRow(t){
   meta.appendChild(su);
   meta.appendChild(metaItem("🚦","start "+fmtDate(t.dates.start)));
 
-  const del=document.createElement("button"); del.className="tdel"; del.textContent="🗑"; del.title="delete tournament";
-  del.onclick=e=>{ e.stopPropagation(); if(confirm('Delete "'+t.name+'"? Any title it awarded stays with the player.')){ state.tournaments=state.tournaments.filter(x=>x.id!==t.id); if(openTid===t.id) openTid=null; save(); renderTournaments(); } };
   const caret=document.createElement("span"); caret.className="tcaret"; caret.textContent="▶";
 
-  head.appendChild(badge); head.appendChild(nm); head.appendChild(meta); head.appendChild(del); head.appendChild(caret);
+  head.appendChild(badge); head.appendChild(nm); head.appendChild(meta);
+  if(atLeast("officer")){
+    const del=document.createElement("button"); del.className="tdel"; del.textContent="🗑"; del.title="delete tournament";
+    del.onclick=e=>{ e.stopPropagation(); if(confirm('Delete "'+t.name+'"? Any title it awarded stays with the player.')){ state.tournaments=state.tournaments.filter(x=>x.id!==t.id); if(openTid===t.id) openTid=null; save(); renderTournaments(); } };
+    head.appendChild(del);
+  }
+  head.appendChild(caret);
   head.onclick=()=>{ openTid = open ? null : t.id; renderTournaments(); };
   row.appendChild(head);
 
@@ -629,17 +950,19 @@ function tourBody(t){
   // ---- signups / generate ----
   if(!hasBracket || !bracketLive(t)){
     body.appendChild(signupPanel(t));
-    const tb=document.createElement("div"); tb.className="toolbar";
-    const gen=document.createElement("button"); gen.className="primary";
-    gen.textContent=hasBracket?"Re-generate bracket":"Generate bracket";
-    gen.onclick=()=>generateBracket(t.id);
-    tb.appendChild(gen);
-    if(hasBracket){
-      const clr=document.createElement("button"); clr.className="ghost"; clr.textContent="Clear bracket";
-      clr.onclick=()=>{ if(confirm("Clear this bracket?")){ t.slots=null;t.size=0;t.picks={}; save(); renderTournaments(); } };
-      tb.appendChild(clr);
+    if(atLeast("officer")){
+      const tb=document.createElement("div"); tb.className="toolbar";
+      const gen=document.createElement("button"); gen.className="primary";
+      gen.textContent=hasBracket?"Re-generate bracket":"Generate bracket";
+      gen.onclick=()=>generateBracket(t.id);
+      tb.appendChild(gen);
+      if(hasBracket){
+        const clr=document.createElement("button"); clr.className="ghost"; clr.textContent="Clear bracket";
+        clr.onclick=()=>{ if(confirm("Clear this bracket?")){ t.slots=null;t.size=0;t.picks={}; save(); renderTournaments(); } };
+        tb.appendChild(clr);
+      }
+      body.appendChild(tb);
     }
-    body.appendChild(tb);
   } else if(locked){
     const r=document.createElement("div"); r.className="lockmsg";
     r.textContent="🔒 Signups closed "+fmtDate(t.dates.signup)+" — roster is locked.";
@@ -676,14 +999,14 @@ function signupPanel(t){
   const cnt=document.createElement("span"); cnt.className="sucount";
   cnt.textContent = joined ? joined+" joined → "+nextPow2(joined)+"-slot bracket" : "nobody checked in yet";
   head.appendChild(h); head.appendChild(cnt);
-  if(!locked){
+  if(!locked && atLeast("officer")){
     const actions=document.createElement("div"); actions.className="suactions";
     const all=document.createElement("button"); all.className="ghost"; all.textContent="Select all";
     all.onclick=()=>{ t.signups=allMembers().map(m=>m.id); save(); renderTournaments(); };
     const none=document.createElement("button"); none.className="ghost"; none.textContent="Clear";
     none.onclick=()=>{ t.signups=[]; save(); renderTournaments(); };
     actions.appendChild(all); actions.appendChild(none); head.appendChild(actions);
-  } else {
+  } else if(locked){
     const lk=document.createElement("span"); lk.className="tm locked"; lk.style.marginLeft="auto";
     lk.textContent="🔒 locked"; head.appendChild(lk);
   }
@@ -699,20 +1022,21 @@ function signupPanel(t){
     const nm=document.createElement("span"); nm.className="sunm"; nm.textContent=m.name; nm.title=m.name;
     const pw=document.createElement("span"); pw.className="supw"; pw.textContent=fmtPower(m.pow);
     chip.appendChild(ck); chip.appendChild(nm); chip.appendChild(pw);
-    if(!locked) chip.onclick=()=>toggleSignup(t.id,m.id);
+    if(!locked && atLeast("member")) chip.onclick=()=>toggleSignup(t.id,m.id);
     grid.appendChild(chip);
   });
   box.appendChild(grid);
   return box;
 }
 function toggleSignup(tid,id){
+  if(!atLeast("member")){ openAuth(); return; }
   const t=tour(tid); if(!t||signupsLocked(t)) return;
   t.signups=t.signups||[];
   const i=t.signups.indexOf(id);
   if(i>=0) t.signups.splice(i,1); else t.signups.push(id);
   save(); renderTournaments();
 }
-function generateBracket(tid){
+function generateBracket(tid){ if(!atLeast("officer")) return;
   const t=tour(tid); if(!t) return;
   const players=allMembers().filter(m=>(t.signups||[]).includes(m.id)); // already in rank order
   if(players.length<2){ alert("Check in at least 2 players to generate a bracket."); return; }
@@ -741,7 +1065,7 @@ function renderDraftElig(){
     picker.appendChild(chip);
   });
 }
-document.getElementById("newTourBtn").onclick=()=>{
+document.getElementById("newTourBtn").onclick=()=>{ if(!atLeast("officer"))return;
   draftElig={type:"open",values:[]};
   document.getElementById("tName").value="";
   document.getElementById("tSignup").value="";
@@ -753,7 +1077,7 @@ document.getElementById("newTourBtn").onclick=()=>{
 };
 document.getElementById("tEligType").onchange=function(){ draftElig={type:this.value,values:[]}; renderDraftElig(); };
 document.getElementById("tourCancel").onclick=()=>tourDlg.close();
-document.getElementById("tourSave").onclick=()=>{
+document.getElementById("tourSave").onclick=()=>{ if(!atLeast("officer"))return;
   const name=document.getElementById("tName").value.trim()||("Tournament "+((state.tournaments||[]).length+1));
   const nt={
     id:uid(), name,
@@ -771,7 +1095,7 @@ document.getElementById("tourSave").onclick=()=>{
 };
 
 function nextPow2(n){ return Math.pow(2,Math.ceil(Math.log2(Math.max(2,n)))); }
-function startDrag(e,c){
+function startDrag(e,c){ if(!atLeast("officer")) return;
   if(e.button!==0) return;
   if(e.target.closest("button,input")) return; // let buttons/inputs work
   drag={c, sx:e.clientX, sy:e.clientY, active:false};
@@ -901,41 +1225,41 @@ document.getElementById("teamAdd").onclick=()=>{
 };
 document.getElementById("teamPow").addEventListener("keydown",e=>{ if(e.key==="Enter"&&!document.getElementById("teamAdd").disabled) document.getElementById("teamAdd").click(); });
 document.getElementById("teamDone").onclick=()=>teamDlg.close();
-function cycleMark(id){
+function cycleMark(id){ if(!atLeast("officer")) return;
   const m=allMembers().find(x=>x.id===id); if(!m) return;
   m.mark=((m.mark||0)+1)%6; // 0 none,1 gold,2 red,3 green,4 officer(purple),5 leader(glow)
   save(); render();
 }
-function removeMember(id){
+function removeMember(id){ if(!atLeast("officer")) return;
   TIERS.forEach(t=>state.tiers[t]=state.tiers[t].filter(m=>m.id!==id));
   if(state.titles) Object.keys(state.titles).forEach(k=>{ if(state.titles[k]===id) delete state.titles[k]; });
   (state.tournaments||[]).forEach(t=>{ t.signups=(t.signups||[]).filter(s=>s!==id); });
   expanded.delete(id);
   rebalance(); save(); render();
 }
-function renameMember(id){
+function renameMember(id){ if(!atLeast("officer")) return;
   const m=allMembers().find(x=>x.id===id); if(!m) return;
   const v=prompt("Account name:",m.name); if(v!==null){m.name=v.trim()||m.name;save();render();}
 }
-function editPower(id){
+function editPower(id){ if(!atLeast("officer")) return;
   const m=allMembers().find(x=>x.id===id); if(!m) return;
   const v=prompt("Power (e.g. 4500000 or 4.5M):",m.pow); if(v!==null){m.pow=parsePower(v);save();render();}
 }
 
 // toolbar
-document.getElementById("addBtn").onclick=()=>{
+document.getElementById("addBtn").onclick=()=>{ if(!atLeast("officer"))return;
   const n=document.getElementById("mName"),p=document.getElementById("mPow");
   addMember(n.value.trim(),p.value); n.value="";p.value="";n.focus();
 };
 document.getElementById("mPow").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("addBtn").click();});
 document.getElementById("mName").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("mPow").focus();});
 
-document.getElementById("sortBtn").onclick=()=>{
+document.getElementById("sortBtn").onclick=()=>{ if(!atLeast("officer"))return;
   const all=allMembers().sort((a,b)=>b.pow-a.pow);
   state.tiers=Object.fromEntries(TIERS.map(t=>[t,[]]));
   state.tiers.S=all; rebalance(); save(); render();
 };
-document.getElementById("clearBtn").onclick=()=>{ if(confirm("Remove all accounts?")){state.tiers=Object.fromEntries(TIERS.map(t=>[t,[]]));save();render();} };
+document.getElementById("clearBtn").onclick=()=>{ if(!atLeast("officer"))return; if(confirm("Remove all accounts?")){state.tiers=Object.fromEntries(TIERS.map(t=>[t,[]]));save();render();} };
 document.getElementById("exportBtn").onclick=()=>{
   let rank=1, rows=["Rank,Tier,Name,Power"];
   TIERS.forEach(t=>state.tiers[t].forEach(m=>rows.push(`${rank++},${state.labels[t]},"${m.name}",${m.pow}`)));
@@ -1023,7 +1347,7 @@ document.getElementById("shareBtn").onclick=()=>{
 const dlg=document.getElementById("pasteDlg");
 document.getElementById("pasteBtn").onclick=()=>dlg.showModal();
 document.getElementById("pasteCancel").onclick=()=>dlg.close();
-document.getElementById("pasteGo").onclick=()=>{
+document.getElementById("pasteGo").onclick=()=>{ if(!atLeast("officer"))return;
   const lines=document.getElementById("pasteArea").value.split("\n");
   lines.forEach(line=>{
     line=line.trim(); if(!line) return;
@@ -1036,10 +1360,15 @@ document.getElementById("pasteGo").onclick=()=>{
 
 // ---- Navigation ----
 function switchView(v){
+  if(v==="members" && !atLeast("leader")) v="ranking";
+  document.getElementById("homeView").style.display = v==="home"?"":"none";
   document.getElementById("rankingView").style.display = v==="ranking"?"":"none";
   document.getElementById("tournamentView").style.display = v==="tournament"?"":"none";
+  document.getElementById("membersView").style.display = v==="members"?"":"none";
   document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
+  if(v==="home"){ renderHome(); }
   if(v==="tournament"){ renderTournaments(); }
+  if(v==="members"){ renderMembers(); }
 }
 document.querySelectorAll(".navbtn").forEach(b=> b.onclick=()=>switchView(b.dataset.view));
 
@@ -1102,7 +1431,7 @@ function matchEl(t,a,b,r,m,winner,seedMap){
   });
   return mm;
 }
-function pickWinner(tid,r,m,name){
+function pickWinner(tid,r,m,name){ if(!atLeast("officer")) return;
   const t=tour(tid); if(!t||!bracketLive(t)) return;
   t.picks[r+"-"+m]=name;
   Object.keys(t.picks).forEach(k=>{ if(parseInt(k.split("-")[0],10)>r) delete t.picks[k]; });
@@ -1158,14 +1487,29 @@ function renderVotesInto(t,box){
   head.appendChild(h); head.appendChild(tot); box.appendChild(head);
 
   if(!closed){
-    const ctrl=document.createElement("div"); ctrl.className="vctrl";
-    const sel=document.createElement("select");
-    names.forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=n; sel.appendChild(o); });
-    if(votePick[t.id] && names.includes(votePick[t.id])) sel.value=votePick[t.id];
-    sel.onchange=()=>votePick[t.id]=sel.value;
-    const btn=document.createElement("button"); btn.className="awardbtn"; btn.style.margin="0"; btn.textContent="Vote";
-    btn.onclick=()=>castVote(t.id,sel.value);
-    ctrl.appendChild(sel); ctrl.appendChild(btn); box.appendChild(ctrl);
+    if(!me()){
+      const note=document.createElement("div"); note.className="votenote";
+      const b=document.createElement("button"); b.className="awardbtn"; b.style.margin="0"; b.textContent="Sign in to vote";
+      b.onclick=openAuth; box.appendChild(b);
+    } else {
+      t.voters=t.voters||{};
+      const myVote=t.voters[currentUser];
+      const ctrl=document.createElement("div"); ctrl.className="vctrl";
+      const sel=document.createElement("select");
+      names.forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=n; sel.appendChild(o); });
+      const pre = myVote && names.includes(myVote) ? myVote : (votePick[t.id] && names.includes(votePick[t.id]) ? votePick[t.id] : null);
+      if(pre) sel.value=pre;
+      sel.onchange=()=>votePick[t.id]=sel.value;
+      const btn=document.createElement("button"); btn.className="awardbtn"; btn.style.margin="0";
+      btn.textContent=myVote?"Change vote":"Vote";
+      btn.onclick=()=>castVote(t.id,sel.value);
+      ctrl.appendChild(sel); ctrl.appendChild(btn); box.appendChild(ctrl);
+      if(myVote){
+        const yn=document.createElement("div"); yn.className="votenote youvoted";
+        yn.textContent="✓ You voted for "+myVote+".";
+        box.appendChild(yn);
+      }
+    }
   } else {
     const note=document.createElement("div"); note.className="votenote";
     note.textContent="Voting closed — tournament started "+fmtDate(t.dates.start)+".";
@@ -1194,12 +1538,20 @@ function renderVotesInto(t,box){
 }
 function castVote(tid,name){
   const t=tour(tid); if(!t||!name||votingClosed(t)) return;
-  t.votes=t.votes||{};
+  if(!me()){ openAuth(); return; }
+  t.votes=t.votes||{}; t.voters=t.voters||{};
+  const prev=t.voters[currentUser];
+  if(prev===name) return;                       // no change
+  if(prev){                                     // moving an existing vote
+    t.votes[prev]=Math.max(0,(t.votes[prev]||0)-1);
+    if(t.votes[prev]===0) delete t.votes[prev];
+  }
   t.votes[name]=(t.votes[name]||0)+1;
+  t.voters[currentUser]=name;
   votePick[tid]=name;
   save(); renderTournaments();
 }
-function awardTrophy(tid,name){
+function awardTrophy(tid,name){ if(!atLeast("officer")) return;
   const t=tour(tid); if(!t) return;
   const m=allMembers().find(x=>x.name===name);
   if(!m){ alert(name+" isn't in the roster anymore, so there's no card to hold the title."); return; }
@@ -1242,8 +1594,14 @@ window.addEventListener("resize",()=>{
 });
 
 document.getElementById("syncNow").onclick=()=>cloudPull();
+document.getElementById("authGo").onclick=doAuth;
+document.getElementById("authCancel").onclick=()=>authDlg().close();
+document.getElementById("authPin").addEventListener("keydown",e=>{ if(e.key==="Enter") doAuth(); });
+document.getElementById("authName").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("authPin").focus(); });
+applyPermissions();
 
 rebalance(); save(); render();
+switchView("home");
 cloudPull();
 </script>
 </body>
